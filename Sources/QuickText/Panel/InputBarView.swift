@@ -156,9 +156,19 @@ struct InputTextView: NSViewRepresentable {
         guard let textView = context.coordinator.textView else { return }
         // Never overwrite the text while an input method is composing.
         if textView.string != text && !textView.hasMarkedText() {
-            textView.string = text
+            Self.replaceText(of: textView, with: text)
             context.coordinator.recalculateHeight()
         }
+    }
+
+    /// Replaces the whole text as one undoable edit. Assigning `string` directly would leave the
+    /// undo stack pointing at text that is gone, and ⌘Z would then crash with NSRangeException.
+    /// This way ⌘Z after an action brings the submitted text back.
+    static func replaceText(of textView: NSTextView, with text: String) {
+        let range = NSRange(location: 0, length: (textView.string as NSString).length)
+        guard textView.shouldChangeText(in: range, replacementString: text) else { return }
+        textView.textStorage?.replaceCharacters(in: range, with: text)
+        textView.didChangeText()
     }
 
     static func dismantleNSView(_ scrollView: NSScrollView, coordinator: Coordinator) {

@@ -177,7 +177,7 @@ final class ProcessRun: @unchecked Sendable {
             lock.unlock()
             stdout.stop()
             stderr.stop()
-            Logger.backend.error("failed to launch \(self.provider.rawValue): \(error.localizedDescription)")
+            Logger.backend.error("failed to launch \(self.provider.rawValue, privacy: .public): \(error.localizedDescription, privacy: .public)")
             continuation.resume(throwing: LLMError.notInstalled(provider))
             return
         }

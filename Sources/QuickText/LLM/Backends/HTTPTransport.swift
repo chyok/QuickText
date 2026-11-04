@@ -43,7 +43,7 @@ enum HTTPTransport {
         do {
             let (data, response) = try await session.data(for: request)
             let status = (response as? HTTPURLResponse)?.statusCode ?? 0
-            Logger.backend.info("\(provider.rawValue) responded with HTTP \(status), \(data.count) bytes")
+            Logger.backend.info("\(provider.rawValue, privacy: .public) responded with HTTP \(status), \(data.count) bytes")
             return Response(status: status, data: data)
         } catch let error as URLError {
             if error.code == .cancelled || Task.isCancelled { throw CancellationError() }
