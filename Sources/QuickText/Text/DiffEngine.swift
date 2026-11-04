@@ -10,8 +10,13 @@ enum DiffEngine {
     /// Token-level diff of `old` → `new`. Changes separated only by spaces are merged into one
     /// block, which is emitted as a delete followed by an insert.
     static func diff(old: String, new: String) -> [DiffSegment] {
-        let a = Tokenizer.tokenize(old)
-        let b = Tokenizer.tokenize(new)
+        group(tokenOps(old: Tokenizer.tokenize(old), new: Tokenizer.tokenize(new)))
+    }
+
+    /// One op per token. Tokens that are neither removed nor inserted are equal on both sides.
+    /// When several alignments are equally short (which spaces "match"), the standard library's
+    /// choice differs between Swift versions; `group` makes the final result the same for all of them.
+    static func tokenOps(old a: [String], new b: [String]) -> [DiffSegment] {
         let difference = b.difference(from: a)
 
         var removed = Set<Int>()
@@ -23,7 +28,6 @@ enum DiffEngine {
             }
         }
 
-        // One op per token. Tokens that are neither removed nor inserted are equal on both sides.
         var ops: [DiffSegment] = []
         var i = 0, j = 0
         while i < a.count || j < b.count {
@@ -39,8 +43,11 @@ enum DiffEngine {
                 j += 1
             }
         }
+        return ops
+    }
 
-        // Group changes into blocks.
+    /// Groups token ops into change blocks and merges neighbouring segments of the same kind.
+    static func group(_ ops: [DiffSegment]) -> [DiffSegment] {
         var result: [DiffSegment] = []
         var blockDelete = ""
         var blockInsert = ""
@@ -56,8 +63,12 @@ enum DiffEngine {
         }
 
         func flushBlock() {
-            append(DiffSegment(kind: .delete, text: blockDelete))
-            append(DiffSegment(kind: .insert, text: blockInsert))
+            // Spaces that both sides start or end with are unchanged text, whichever spaces the diff matched.
+            let shared = sharedEdgeSpaces(blockDelete, blockInsert)
+            append(DiffSegment(kind: .equal, text: shared.leading))
+            append(DiffSegment(kind: .delete, text: shared.old))
+            append(DiffSegment(kind: .insert, text: shared.new))
+            append(DiffSegment(kind: .equal, text: shared.trailing))
             blockDelete = ""
             blockInsert = ""
             blockHasChange = false
@@ -86,6 +97,22 @@ enum DiffEngine {
         }
         flushBlock()
         return result
+    }
+
+    /// Splits off the spaces (not newlines) that `old` and `new` both start and end with.
+    static func sharedEdgeSpaces(_ old: String, _ new: String)
+        -> (leading: String, old: String, new: String, trailing: String) {
+        func isSpace(_ character: Character) -> Bool { character.isWhitespace && !character.isNewline }
+
+        let leadingCount = zip(old, new).prefix { $0 == $1 && isSpace($0) }.count
+        let leading = String(old.prefix(leadingCount))
+        var old = old.dropFirst(leadingCount), new = new.dropFirst(leadingCount)
+
+        let trailingCount = zip(old.reversed(), new.reversed()).prefix { $0 == $1 && isSpace($0) }.count
+        let trailing = String(old.suffix(trailingCount))
+        old.removeLast(trailingCount)
+        new.removeLast(trailingCount)
+        return (leading, String(old), String(new), trailing)
     }
 
     /// Number of contiguous change groups.

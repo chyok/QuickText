@@ -45,6 +45,33 @@ import Testing
         #expect(DiffEngine.changeCount(segments) == 1)
     }
 
+    @Test func everyEquallyShortAlignmentGivesTheSameResult() {
+        // "a lot of peoples is here" → "many people are here": which spaces match is a free choice,
+        // and Swift versions choose differently. These are two of the valid alignments.
+        let matchLastSpace: [DiffSegment] = [
+            seg(.delete, "a"), seg(.insert, "many"), seg(.equal, " "),
+            seg(.delete, "lot"), seg(.delete, " "), seg(.delete, "of"), seg(.insert, "people"), seg(.equal, " "),
+            seg(.delete, "peoples"), seg(.delete, " "), seg(.delete, "is"), seg(.insert, "are"), seg(.equal, " "),
+            seg(.equal, "here"),
+        ]
+        let matchFirstSpaces: [DiffSegment] = [
+            seg(.delete, "a"), seg(.insert, "many"), seg(.equal, " "),
+            seg(.delete, "lot"), seg(.insert, "people"), seg(.equal, " "),
+            seg(.delete, "of"), seg(.insert, "are"), seg(.equal, " "),
+            seg(.delete, "peoples"), seg(.delete, " "), seg(.delete, "is"), seg(.delete, " "),
+            seg(.equal, "here"),
+        ]
+        let expected = [seg(.delete, "a lot of peoples is"), seg(.insert, "many people are"), seg(.equal, " here")]
+        #expect(DiffEngine.group(matchLastSpace) == expected)
+        #expect(DiffEngine.group(matchFirstSpaces) == expected)
+    }
+
+    @Test func sharedEdgeSpaces() {
+        #expect(DiffEngine.sharedEdgeSpaces(" old  ", " new ") == (" ", "old ", "new", " "))
+        #expect(DiffEngine.sharedEdgeSpaces("a\n", "b\n") == ("", "a\n", "b\n", ""))
+        #expect(DiffEngine.sharedEdgeSpaces("", " x") == ("", "", " x", ""))
+    }
+
     @Test func newlinesAreNeverMergedIntoABlock() {
         let segments = DiffEngine.diff(old: "teh\nwrold", new: "the\nworld")
         #expect(segments == [
