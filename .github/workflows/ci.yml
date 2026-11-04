@@ -1,0 +1,23 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Test
+        run: swift test
+
+      - name: Build universal app
+        run: ARCHS="arm64 x86_64" scripts/build-app.sh
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: QuickText.app
+          path: build/QuickText.app
