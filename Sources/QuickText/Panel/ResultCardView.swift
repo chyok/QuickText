@@ -23,8 +23,6 @@ extension TextActionKind {
 
 struct ResultCardView: View {
     let card: ResultCard
-    /// When Copy was last clicked; "Copied" shows for 1.5 s after that.
-    @StateObject private var copiedAt = LocalState<Date?>(nil)
     @StateObject private var showOriginal = LocalState(false)
 
     var body: some View {
@@ -62,13 +60,7 @@ struct ResultCardView: View {
                         .font(.caption.monospacedDigit())
                         .foregroundStyle(.tertiary)
                 }
-                Button { copy(result.copyText) } label: {
-                    Label(copiedAt.value == nil ? "Copy" : "Copied",
-                          systemImage: copiedAt.value == nil ? "doc.on.doc" : "checkmark")
-                }
-                .buttonStyle(.borderless)
-                .controlSize(.small)
-                .help(card.action == .check ? "Copy the corrected text" : "Copy the result")
+                CopyButton(text: result.copyText, help: copyHelp)
             }
         }
     }
@@ -88,16 +80,11 @@ struct ResultCardView: View {
         "\(count) \(noun)\(count == 1 ? "" : "s")"
     }
 
-    private func copy(_ text: String) {
-        let pasteboard = NSPasteboard.general
-        pasteboard.clearContents()
-        pasteboard.setString(text, forType: .string)
-        let now = Date()
-        copiedAt.value = now
-        let state = copiedAt
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
-            // A later click restarts the 1.5 s.
-            if state.value == now { state.value = nil }
+    private var copyHelp: String {
+        switch card.action.kind {
+        case .check: return "Copy the corrected text"
+        case .send: return "Copy the reply as Markdown"
+        case .refine, .translate: return "Copy the result"
         }
     }
 
@@ -117,8 +104,10 @@ struct ResultCardView: View {
             }
         case let .done(.check(result)):
             CheckResultView(result: result)
+        case let .done(.text(text)) where card.action == .send:
+            MarkdownView(text)
         case let .done(.text(text)):
-            Text(card.action == .send ? DiffRenderer.markdown(text) : AttributedString(text))
+            Text(text)
                 .font(.system(size: 14))
                 .lineSpacing(3)
                 .textSelection(.enabled)
@@ -162,6 +151,39 @@ struct ResultCardView: View {
                             .fill(Color.primary.opacity(0.04))
                     )
             }
+        }
+    }
+}
+
+/// A borderless Copy button that reads "Copied" for 1.5 s after a click.
+struct CopyButton: View {
+    let text: String
+    let help: String
+    /// When the button was last clicked.
+    @StateObject private var copiedAt = LocalState<Date?>(nil)
+
+    var body: some View {
+        Button(action: copy) {
+            Label(copiedAt.value == nil ? "Copy" : "Copied",
+                  systemImage: copiedAt.value == nil ? "doc.on.doc" : "checkmark")
+        }
+        .buttonStyle(.borderless)
+        .controlSize(.small)
+        // The same size everywhere, even inside a Markdown reply's larger body font.
+        .font(.system(size: NSFont.smallSystemFontSize))
+        .help(help)
+    }
+
+    private func copy() {
+        let pasteboard = NSPasteboard.general
+        pasteboard.clearContents()
+        pasteboard.setString(text, forType: .string)
+        let now = Date()
+        copiedAt.value = now
+        let state = copiedAt
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+            // A later click restarts the 1.5 s.
+            if state.value == now { state.value = nil }
         }
     }
 }

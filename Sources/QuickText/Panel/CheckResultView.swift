@@ -83,10 +83,4 @@ enum DiffRenderer {
         result += AttributedString(": " + note.reason)
         return result
     }
-
-    /// Inline Markdown only (bold, italic, code, links); whitespace is kept as is.
-    static func markdown(_ text: String) -> AttributedString {
-        let options = AttributedString.MarkdownParsingOptions(interpretedSyntax: .inlineOnlyPreservingWhitespace)
-        return (try? AttributedString(markdown: text, options: options)) ?? AttributedString(text)
-    }
 }

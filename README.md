@@ -22,7 +22,7 @@
 - **Check** — fixes grammar, spelling and punctuation, shows each change inline, and explains it so you learn from your mistakes.
 - **Refine** — rewrites in one of five styles: Natural, Polite, Formal, Concise or Casual.
 - **Translate** — Chinese ⇄ English, with the direction detected automatically.
-- **Send** — a quick question box: your text goes to the model as is, with no prompt.
+- **Send** — a quick question box: your text goes to the model as is, with no prompt, and the reply is rendered as Markdown.
 - **Any model** — Claude Code, Codex, the Anthropic API, the OpenAI API, or a local model through Ollama or LM Studio.
 - **Private and permission-free** — no Accessibility or Screen Recording access; text stays in memory, API keys stay in your Keychain.
 
@@ -57,6 +57,19 @@ Press **⌃⌥K** anywhere, type or paste some text, and press **⏎**. Click **
 | Esc | Hide |
 
 The window follows you to whichever screen the pointer is on, works over full-screen apps, and hides as soon as you click elsewhere. Results keep arriving while it's hidden.
+
+### Send
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/images/send-dark.png">
+  <img src="docs/images/send-light.png" width="480" align="right" alt="A Send reply rendered as Markdown, with a code block, a table and a quote">
+</picture>
+
+Send is for quick questions. Replies are rendered as Markdown: headings, bold and italic, inline code, links, numbered, bulleted and task lists, quotes, tables and code blocks. Single line breaks are kept, as in chat apps.
+
+Each code block has its own **Copy** button for just the code. The card's **Copy** gives you the whole reply as Markdown source, ready to paste into notes, an issue or a chat.
+
+<br clear="right">
 
 ## Settings
 
@@ -110,6 +123,7 @@ The app is signed ad hoc and not notarized. To run a copy built on another Mac, 
 <summary><b>Limitations</b></summary>
 
 - Results arrive all at once rather than streaming.
+- In a Send reply, selecting with the mouse works one block (a paragraph, list item, table cell or code block) at a time; use **Copy** for the whole reply. Images in Markdown show as their alt text.
 - Translate only goes between Chinese and English; Japanese kanji count as Chinese.
 - With command-line providers, Send isn't fully context-free: Claude Code adds a short block of environment details and Codex keeps its base instructions. Use an API provider for a bare request.
 - Small local models follow the Check format less reliably.
